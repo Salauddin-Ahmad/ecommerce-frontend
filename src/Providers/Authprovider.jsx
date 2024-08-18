@@ -1,86 +1,115 @@
-import { createContext, useEffect, useState } from "react";
-import { GoogleAuthProvider, createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, signOut, updateProfile } from "firebase/auth";
-import useAxiosPublic from "../Hooks/UseAxiosPublic";
-import auth from "./firebase.config";
+import PropTypes from 'prop-types'
+import { createContext, useEffect, useState } from 'react'
 
- 
+import {
+  GoogleAuthProvider,
+  TwitterAuthProvider,
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  signOut,
+  updateProfile,
+} from 'firebase/auth'
+
+import axios from 'axios'
+import useAxiosPublic from '../Hooks/UseAxiosPublic'
+import auth from './firebase.config'
 export const AuthContext = createContext(null)
 
-const AuthProvider = ({children}) => {
-     
-    const [user,setUser] = useState(null)
-    const [loading,setLoading] = useState(true)
-    const axiosPublic = useAxiosPublic()
-    const googleProvider = new GoogleAuthProvider() 
 
-    useEffect(()=>{
-        const unsubcribe = onAuthStateChanged(auth,currentUser =>{
-            setUser(currentUser)
-            console.log('current user',currentUser);
-            if (currentUser) {
-                const userInfo = {email : currentUser.email}
-                //get and store token
-                axiosPublic.post('/jwt',userInfo)
-                .then(res =>{
-                     
-                    if (res.data.token) {
-                        localStorage.setItem('access-token',res.data.token)
-                        setLoading(false)
-                    }
-                })
-            }
-            else{
-                //reomve token
-                localStorage.removeItem('access-token')
-                setLoading(false)
-            }
-            
-        });
-        return () => {
-            return unsubcribe();
-        }  
-    },[])
+const googleProvider = new GoogleAuthProvider()
+const twitterProvider = new TwitterAuthProvider()
 
-    const signIN = (email,password) =>{
-        setLoading(true)
-        return signInWithEmailAndPassword(auth,email,password)
-    }
-    const googleSignIn = () =>{
-        setLoading(true)
+const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
 
-        return signInWithPopup(auth,googleProvider)
-    }
-    const createUser = (email,password) =>{
-        setLoading(true)
-        return createUserWithEmailAndPassword(auth,email,password)
-    }
+  const createUser = (email, password) => {
+    setLoading(true)
+    return createUserWithEmailAndPassword(auth, email, password)
+  }
 
-    const updateUser = (name,photo) => {
-        return updateProfile(auth.currentUser, {
-            displayName: name, photoURL:photo
+  const signIn = (email, password) => {
+    setLoading(true)
+    return signInWithEmailAndPassword(auth, email, password)
+  }
+
+  const signInWithGoogle = () => {
+    setLoading(true)
+    return signInWithPopup(auth, googleProvider)
+  }
+  const signInWithTwitter = () => {
+    setLoading(true)
+    return signInWithPopup(auth, twitterProvider)
+  }
+
+//   const resetPassword = email => {
+//     setLoading(true)
+//     return sendPasswordResetEmail(auth, email)
+//   }
+
+  const logOut = async () => {
+    setLoading(true)
+    await axios.get(`${import.meta.env.VITE_API_URL}/logout`, {
+      withCredentials: true,
+    })
+    return signOut(auth)
+  }
+
+  const updateUserProfile = (name, photo) => {
+    return updateProfile(auth.currentUser, {
+      displayName: name,
+      photoURL: photo,
+    })
+  }
+  const axiosPublic = useAxiosPublic();
+
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser)
+      if (currentUser) {
+
+        // get token and store client
+        const userInfo = {email: currentUser.email,   displayName: currentUser.displayName, }
+        axiosPublic.post('jwt', userInfo)
+         .then((res) => {
+            console.log(res.data);
+            localStorage.setItem('access-token', res.data.token);
+            setLoading(false);
           })
-    }
+      } else {
+        localStorage.removeItem('access-token')
+        setLoading(false);
+      }
 
-    const logOut = () =>{
-        setLoading(true)
-        return signOut(auth)
-    }
-    const authInfo = {
-        user,
-        loading,
-        signIN,
-        createUser,
-        logOut,
-        updateUser ,
-        googleSignIn,
-         
-        
-    }
-    return (
-        <AuthContext.Provider value={authInfo}>
-            {children}
-        </AuthContext.Provider>
-    );
-};
+      
+    });
+    return () => unsubscribe();
+  }, [axiosPublic]);
 
-export default AuthProvider;
+  const authInfo = {
+    user,
+    loading,
+    setLoading,
+    createUser,
+    signIn,
+    signInWithGoogle,
+    logOut,
+    updateUserProfile,
+    setUser,
+    signInWithTwitter
+  }
+
+  return (
+    <AuthContext.Provider value={authInfo}>{children}</AuthContext.Provider>
+  )
+}
+
+AuthProvider.propTypes = {
+  // Array of children.
+  children: PropTypes.array,
+}
+
+export default AuthProvider

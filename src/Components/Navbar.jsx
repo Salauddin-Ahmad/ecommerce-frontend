@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import useAuth from "../Hooks/UseAuth";
 
 const Navbar = () => {
@@ -47,7 +47,8 @@ const Navbar = () => {
                             {navLinks}
                         </ul>
                     </div>
-                    <a className="btn btn-ghost text-xl">Digitech</a>
+                    <a className="btn btn-ghost text-xl"><Link to={'/'}>
+                    Digitech </Link> </a>
                 </div>
                 <div className="navbar-center hidden lg:flex">
                     <ul className="menu menu-horizontal px-1">
@@ -58,7 +59,9 @@ const Navbar = () => {
                     <div className="flex-none">
                         {!user && (
                             <div className="hidden lg:block text-lg font-medium">
-                                Join Digitech
+                               <NavLink to='login'>
+                               Join Digitech
+                               </NavLink>
                             </div>
                         )}
 
