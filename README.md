@@ -34,9 +34,9 @@ To run the project locally, follow these steps:
 
 ### Prerequisites
 - Node.js (v14+)
-- npm or yarn
+- npm or yarnn
 
 ### Installation
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/ecommerce-client.git
+   git clone https://github.com/your-username/ecommerce-client.git 
